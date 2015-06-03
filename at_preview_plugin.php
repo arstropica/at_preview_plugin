@@ -155,7 +155,7 @@
         {
             global $wp_query;
 
-            if ( get_query_var('guestpreview') === false || $_SERVER['REQUEST_URI'] != '/guestpreview/')
+            if ( get_query_var('guestpreview') === false || strpos($_SERVER['REQUEST_URI'], '/guestpreview') === false)
             {
                 return;
             }
@@ -184,7 +184,7 @@
         {
             global $wp_query;
 
-            if ( get_query_var('guestpreview') === false || (strpos($_SERVER['REQUEST_URI'], '/guestpreview') !== 0) )
+            if ( get_query_var('guestpreview') === false || (strpos($_SERVER['REQUEST_URI'], '/guestpreview') === false) )
             {
                 return;
             }
@@ -283,7 +283,7 @@ HTML;
         public function _at_preview_wp_customize_include() {
             if ( ! ( ( isset( $_REQUEST['demo'] ) && '1' == $_REQUEST['demo'] )
             || ( 'at-preview-customize.php' == basename( $_SERVER['PHP_SELF'] ) )
-            || ( strpos($_SERVER['REQUEST_URI'], '/demo') === 0 )
+            || ( strpos($_SERVER['REQUEST_URI'], '/demo') !== false )
             ) )
                 return;
 
@@ -865,7 +865,7 @@ HTML;
     * @return void 
     */
     function if_guest_redirect() {
-        global $current_user;
+        global $current_user, $wp_query;
         $guest_logged_in = false;
         if (is_user_logged_in()) {
             get_currentuserinfo();
@@ -877,7 +877,7 @@ HTML;
         if (! $guest_logged_in) {
             echo '<script type="text/javascript">
             /* <![CDATA[ */
-            if (window.top.location.pathname.indexOf("/guestpreview") == 0) {
+            if (window.top.location.pathname.indexOf("/guestpreview") >= 0) {
             window.top.location.href = window.location.href;
             }
             /* ]]> */
