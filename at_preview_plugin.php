@@ -105,6 +105,7 @@
             add_action( 'template_redirect', array($this, 'at_preview_guest_login_iframe') );
             add_action( 'admin_enqueue_scripts', array($this, '_at_preview_wp_customize_loader_settings' ));
             add_action( 'admin_bar_menu', array($this, 'at_preview_customize_menu' ));
+            add_action( 'wp_before_admin_bar_render', array($this, 'at_preview_simplify_menu' ));  
             add_action( 'admin_menu', array($this, 'at_preview_register_theme_page') );
             add_action( 'admin_init', array($this, 'at_preview_add_options_metaboxes') );
             add_action( 'wp_head', array($this, 'if_guest_redirect') );
@@ -282,9 +283,9 @@ HTML;
         */
         public function _at_preview_wp_customize_include() {
             if ( ! ( ( isset( $_REQUEST['demo'] ) && '1' == $_REQUEST['demo'] )
-            || ( 'at-preview-customize.php' == basename( $_SERVER['PHP_SELF'] ) )
-            || ( strpos($_SERVER['REQUEST_URI'], '/demo') !== false )
-            ) )
+                || ( 'at-preview-customize.php' == basename( $_SERVER['PHP_SELF'] ) )
+                || ( strpos($_SERVER['REQUEST_URI'], '/demo') !== false )
+                ) )
                 return;
 
             require_once( ABSPATH . WPINC . '/class-wp-customize-manager.php' );
@@ -355,14 +356,14 @@ HTML;
             $cross_domain = ( strtolower( $admin_origin[ 'host' ] ) != strtolower( $home_origin[ 'host' ] ) );
 
             $browser = array(
-            'mobile' => wp_is_mobile(),
-            'ios'    => wp_is_mobile() && preg_match( '/iPad|iPod|iPhone/', $_SERVER['HTTP_USER_AGENT'] ),
+                'mobile' => wp_is_mobile(),
+                'ios'    => wp_is_mobile() && preg_match( '/iPad|iPod|iPhone/', $_SERVER['HTTP_USER_AGENT'] ),
             );
 
             $settings = array(
-            'url'           => esc_url( home_url( 'guestpreview' )  ),
-            'isCrossDomain' => $cross_domain,
-            'browser'       => $browser,
+                'url'           => esc_url( home_url( 'guestpreview' )  ),
+                'isCrossDomain' => $cross_domain,
+                'browser'       => $browser,
             );
 
             $script = 'var _wpCustomizeLoaderSettings = ' . json_encode( $settings ) . ';';
@@ -403,13 +404,41 @@ HTML;
             get_currentuserinfo();
             if ($current_user->user_login == 'guest') {
                 $admin_bar->add_menu( array (
-                'id' => 'customizer-preview',
-                'title' => 'Guest Preview',
-                'href' => home_url( '/guestpreview' ),
-                'meta' => array(
-                'title' => __('ArsTropica Responsive Theme Customizer Preview'),
-                ),
+                    'id' => 'customizer-preview',
+                    'title' => 'Guest Preview',
+                    'href' => home_url( '/guestpreview' ),
+                    'meta' => array(
+                        'title' => __('ArsTropica Responsive Theme Customizer Preview'),
+                    ),
                 ));                                       
+                $admin_bar->add_menu( array (
+                    'id' => 'customizer-site-name',
+                    'title' => __(ucwords(get_current_theme()) . " Theme"),
+                    'href' => home_url( '/guestpreview' ),
+                    'meta' => array(
+                        'title' => __(ucwords(get_current_theme()) . ' Theme Customizer Preview'),
+                    ),
+                ));                                       
+            }
+        }
+
+        /**
+        *    Simplify the admin bar.
+        *
+        * @since 1.0
+        * 
+        * @return void 
+        *
+        */
+        public function at_preview_simplify_menu() {
+            global $current_user, $wp_admin_bar;
+            get_currentuserinfo();
+            if ($current_user->user_login == 'guest') {
+                $wp_admin_bar->remove_menu('site-name');  
+                $wp_admin_bar->remove_menu('updates');  
+                $wp_admin_bar->remove_menu('comments');  
+                $wp_admin_bar->remove_menu('my-account');  
+                $wp_admin_bar->remove_menu('my-sites');  
             }
         }
 
@@ -562,21 +591,21 @@ HTML;
         public function at_preview_add_options_metaboxes()
         {
             add_meta_box(
-            'at_preview_password',
-            __( 'Authentication Settings', 'at-preview' ),
-            array($this, 'do_auth_metabox'),
-            'settings_page_at_preview',
-            'normal',
-            'core'
+                'at_preview_password',
+                __( 'Authentication Settings', 'at-preview' ),
+                array($this, 'do_auth_metabox'),
+                'settings_page_at_preview',
+                'normal',
+                'core'
             );
 
             add_meta_box(
-            'at_preview_preview',
-            __( 'Preview', 'at-preview' ),
-            array($this, 'do_preview_metabox'),
-            'settings_page_at_preview',
-            'normal',
-            'core'
+                'at_preview_preview',
+                __( 'Preview', 'at-preview' ),
+                array($this, 'do_preview_metabox'),
+                'settings_page_at_preview',
+                'normal',
+                'core'
             );
 
         }
@@ -743,10 +772,10 @@ HTML;
             $at_preview_user_role = get_role('theme_options_preview');
             if (! $at_preview_user_role) {
                 $at_preview_user_role = add_role('theme_options_preview', 'Theme Options Preview', array(
-                'read' => true, 
-                'edit_posts' => false,
-                'delete_posts' => false, // Use false to explicitly deny
-                'edit_theme_options' => true, //This is the magic
+                    'read' => true, 
+                    'edit_posts' => false,
+                    'delete_posts' => false, // Use false to explicitly deny
+                    'edit_theme_options' => true, //This is the magic
                 ));
             }
             if ($at_preview_user_role) {
@@ -801,87 +830,87 @@ HTML;
             });
         </script>
         <?php
-    }
+        }
 
-    /**
-    * Add theme mod / option filters
-    * 
-    * @since 1.0
-    * 
-    * @return void 
-    */
-    public function maybe_filter_theme_mod() {
-        if (stristr($_SERVER['HTTP_REFERER'], 'at-preview-customize.php')) {
-            global $wp_customize;
-            $settings = $wp_customize->settings();
-            if ($settings) {
-                foreach ($settings as $setting) {
-                    $_name = $setting->id;
-                    $_type = $setting->type;
-                    switch ($_type) {
-                        case 'get_theme_mod' : {
-                            add_filter( "theme_mod_{$_name}", array($this, "do_filter_theme_mod"), 10, 1 );
-                            break;
+        /**
+        * Add theme mod / option filters
+        * 
+        * @since 1.0
+        * 
+        * @return void 
+        */
+        public function maybe_filter_theme_mod() {
+            if (stristr($_SERVER['HTTP_REFERER'], 'at-preview-customize.php')) {
+                global $wp_customize;
+                $settings = $wp_customize->settings();
+                if ($settings) {
+                    foreach ($settings as $setting) {
+                        $_name = $setting->id;
+                        $_type = $setting->type;
+                        switch ($_type) {
+                            case 'get_theme_mod' : {
+                                add_filter( "theme_mod_{$_name}", array($this, "do_filter_theme_mod"), 10, 1 );
+                                break;
+                            }
+                            case 'get_option' : {
+                                add_filter( "pre_option_{$_name}", array($this, "do_filter_theme_mod"), 10, 1 );
+                                break;
+                            }
                         }
-                        case 'get_option' : {
-                            add_filter( "pre_option_{$_name}", array($this, "do_filter_theme_mod"), 10, 1 );
-                            break;
-                        }
+                        // echo "<pre>" . print_r("theme_mod_{$_name}", true) . "</pre>\n";
                     }
-                    // echo "<pre>" . print_r("theme_mod_{$_name}", true) . "</pre>\n";
                 }
             }
         }
-    }
 
-    /**
-    * Add global JS variables
-    * 
-    * @since 1.0
-    * 
-    * @return void 
-    */
-    function global_js_vars() {
-        global $current_user;
-        if (is_user_logged_in()) {
-            get_currentuserinfo();
-            $uname = '"' . $current_user->user_login . '"';
-        } else {
-            $uname = 'false';
-        }
-
-        echo '<script type="text/javascript">
-        /* <![CDATA[ */
-        var at_preview_vars = {"current_user": ' . $uname . '};
-        /* ]]> */
-        </script>';
-    }
-
-    /**
-    * Redirect IFRAME if guest preview is off
-    * 
-    * @since 1.0
-    * 
-    * @return void 
-    */
-    function if_guest_redirect() {
-        global $current_user, $wp_query;
-        $guest_logged_in = false;
-        if (is_user_logged_in()) {
-            get_currentuserinfo();
-            if (strtolower($current_user->user_login) == 'guest') {
-                $guest_logged_in = true;
+        /**
+        * Add global JS variables
+        * 
+        * @since 1.0
+        * 
+        * @return void 
+        */
+        function global_js_vars() {
+            global $current_user;
+            if (is_user_logged_in()) {
+                get_currentuserinfo();
+                $uname = '"' . $current_user->user_login . '"';
+            } else {
+                $uname = 'false';
             }
-        }
 
-        if (! $guest_logged_in) {
             echo '<script type="text/javascript">
             /* <![CDATA[ */
-            if (window.top.location.pathname.indexOf("/guestpreview") >= 0) {
-            window.top.location.href = window.location.href;
-            }
+            var at_preview_vars = {"current_user": ' . $uname . '};
             /* ]]> */
-            </script>';             
+            </script>';
+        }
+
+        /**
+        * Redirect IFRAME if guest preview is off
+        * 
+        * @since 1.0
+        * 
+        * @return void 
+        */
+        function if_guest_redirect() {
+            global $current_user, $wp_query;
+            $guest_logged_in = false;
+            if (is_user_logged_in()) {
+                get_currentuserinfo();
+                if (strtolower($current_user->user_login) == 'guest') {
+                    $guest_logged_in = true;
+                }
+            }
+
+            if (! $guest_logged_in) {
+                echo '<script type="text/javascript">
+                /* <![CDATA[ */
+                if (window.top.location.pathname.indexOf("/guestpreview") >= 0) {
+                window.top.location.href = window.location.href;
+                }
+                /* ]]> */
+                </script>';             
+            }
         }
     }
-}
