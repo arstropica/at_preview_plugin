@@ -59,7 +59,62 @@
         }
     }
 
+    /**
+    * Removes Login and Role upon Deactivation.
+    * 
+    * @since 1.0
+    * @return void 
+    */
+    function at_preview_deactivation() {
+
+        if (is_plugin_active_for_network(plugin_basename( __FILE__ ))) {
+            $blogs = wp_get_sites();
+            foreach ( $blogs as $blog ) {
+                switch_to_blog( $blog[ 'blog_id' ] );
+                at_remove_guest();
+                restore_current_blog();
+            }
+        } else {
+            at_remove_guest();
+        }
+
+    }
+
+    /*
+    * Remove Guest User and Preview Role 
+    * @since 1.0
+    * @return bool $success 
+    */
+    function at_remove_guest()
+    {
+        global $wp_roles;
+        
+        $success = false;
+
+        if ( username_exists( 'guest' ) ) {
+
+            $guest = get_user_by( 'login', 'guest' );
+
+            if ($guest && is_a($guest, 'WP_User')) {
+                $success = true;
+                wp_delete_user( $guest->ID );
+            }
+        }
+
+        if ($wp_roles->is_role('theme_options_preview')) {
+            remove_role('theme_options_preview');
+        } else {
+            $success = false;
+        }
+        
+        return $success;
+    }
+
     at_preview_init();
+
+    /*Register Deactivation Hook*/
+    register_deactivation_hook( __FILE__, 'at_preview_deactivation' );
+
 
 
     /**
@@ -771,9 +826,18 @@ HTML;
             $at_preview_user_role = get_role('theme_options_preview');
             if (! $at_preview_user_role) {
                 $at_preview_user_role = add_role('theme_options_preview', 'Theme Options Preview', array(
-                    'read' => true, 
-                    'edit_posts' => false,
                     'delete_posts' => false, // Use false to explicitly deny
+                    'read' => false, // true allows this capability
+                    'edit_posts' => false, // Allows user to edit their own posts
+                    'edit_pages' => false, // Allows user to edit pages
+                    'edit_others_posts' => false, // Allows user to edit others posts not just their own
+                    'create_posts' => false, // Allows user to create new posts
+                    'manage_categories' => false, // Allows user to manage post categories
+                    'publish_posts' => false, // Allows the user to publish, otherwise posts stays in draft mode
+                    'edit_themes' => false, // false denies this capability. User can’t edit your theme
+                    'install_plugins' => false, // User cant add new plugins
+                    'update_plugin' => false, // User can’t update any plugins
+                    'update_core' => false, // user cant perform core updates
                     'edit_theme_options' => true, //This is the magic
                 ));
             }
